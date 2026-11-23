@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visave</title>
+<style>
+:root{--bg:#fafaf9;--card:#fff;--tx:#18181b;--mut:#71717a;--bd:#e7e5e4;--soft:#f4f4f5;--ac:#0f766e;--acx:#fff;--acsoft:#ccfbf1;--warn:#b45309;--warnbg:#fffbeb;--warnbd:#fde68a;--ok:#15803d}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0c0d;--card:#151516;--tx:#f4f4f5;--mut:#a1a1aa;--bd:#27272a;--soft:#1e1e20;--ac:#2dd4bf;--acx:#042f2e;--acsoft:#0f2f2c;--warn:#fbbf24;--warnbg:#241c08;--warnbd:#4a3a0f;--ok:#4ade80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:44px 20px 60px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--ac);color:var(--acx);display:grid;place-items:center;margin-bottom:16px}
+h1{font-size:26px;letter-spacing:-.02em;margin:0 0 6px;font-weight:650}
+.sub{margin:0 0 24px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px}
+.opt{display:flex;align-items:center;gap:10px;margin-bottom:14px;color:var(--mut);font-size:14px}
+.opt input{width:84px;font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:9px;padding:6px 10px}
+#drop{display:flex;flex-direction:column;align-items:center;gap:6px;padding:38px 20px;text-align:center;cursor:pointer;border:1.5px dashed var(--bd)}
+#drop:hover,#drop.over{border-color:var(--ac);background:var(--acsoft)}
+#drop .ic{width:44px;height:44px;border-radius:50%;background:var(--soft);color:var(--ac);display:grid;place-items:center;margin-bottom:6px}
+#drop b{font-size:16px}#drop span{color:var(--mut);font-size:13px}
+.hid{display:none!important}
+button{font:inherit;font-weight:600;font-size:14px;border:0;border-radius:10px;padding:9px 16px;background:var(--ac);color:var(--acx);cursor:pointer}
+button:hover{opacity:.9}
+button.ghost{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+button.ghost:hover{background:var(--soft)}
+button:disabled{opacity:.4;cursor:default}
+#res{margin-top:20px;overflow:hidden}
+.head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.head .t{flex:1;min-width:140px}.head .t b{display:block}.head .t span{color:var(--mut);font-size:13px}
+.prog{height:3px;background:var(--soft)}.prog i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+#warn{margin:12px 16px 0;padding:10px 12px;border-radius:10px;background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warn);font-size:13px}
+.row{display:flex;gap:14px;align-items:center;padding:12px 16px;border-top:1px solid var(--bd)}
+.row:first-child{border-top:0}
+.row img{width:44px;height:60px;object-fit:cover;object-position:top;border-radius:8px;border:1px solid var(--bd);flex:none;background:#fff}
+.f{flex:1;min-width:0}
+.f input{width:100%;font:inherit;font-weight:600;color:var(--tx);background:transparent;border:1px solid transparent;border-radius:8px;padding:3px 6px;margin-left:-6px}
+.f input:hover{border-color:var(--bd)}.f input:focus{outline:0;border-color:var(--ac);background:var(--soft)}
+.f small{display:block;color:var(--mut);font-size:12px}
+.f small.over{color:var(--warn)}.f small .ok{color:var(--ok)}
+.row.bad .f input{border-color:var(--warnbd);background:var(--warnbg)}
+.row .b{display:flex;gap:6px}
+.row button{padding:7px 11px;font-size:13px}
+.priv{margin:20px 0 0;color:var(--mut);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14l2 2 4-4"/></svg></div>
+  <h1>Visa Bio, PDF ke JPG + PDF</h1>
+  <p class="sub">Unggah PDF hasil print email. Tiap halaman menghasilkan JPG dan PDF dengan nama NAMA_NOPASPOR, ukurannya dibatasi otomatis.</p>
+
+  <div class="opt">Batas ukuran per file <input id="lim" type="number" min="10" max="5000" value="100"> KB</div>
+
+  <div id="drop" class="card" tabindex="0" role="button">
+    <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
+    <b>Pilih atau tarik PDF ke sini</b>
+    <span>Boleh banyak file, dan satu PDF boleh berisi banyak halaman</span>
+  </div>
+  <input id="file" type="file" accept="application/pdf" multiple class="hid">
+
+  <section id="res" class="card hid">
+    <div class="head">
+      <div class="t"><b id="cnt">0 file</b><span id="status"></span></div>
+      <button id="clearBtn" class="ghost">Ulangi</button>
+      <button id="zipBtn" disabled>Unduh ZIP (JPG + PDF)</button>
+    </div>
+    <div class="prog"><i id="pb"></i></div>
+    <div id="warn" class="hid"></div>
+    <div id="list"></div>
+  </section>
+  <p class="priv">Diproses di browser Anda. Data paspor tidak dikirim keluar dari jaringan.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
+function load(srcs){
+  return srcs.reduce((p, src) => p.catch(() => new Promise((ok, no) => {
+    const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = no; document.head.append(s);
+  })), Promise.reject());
+}
+const ready = (async () => {
+  await load(["libs/pdf.min.js", CDN + "pdf.js/3.11.174/pdf.min.js"]);
+  await load(["libs/pdf.worker.min.js", CDN + "pdf.js/3.11.174/pdf.worker.min.js"]);
+  await load(["libs/jszip.min.js", CDN + "jszip/3.10.1/jszip.min.js"]);
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "libs/pdf.worker.min.js";
+})();
+
+const items = [];
+let busy = false;
+
+const drop = $("drop"), fileIn = $("file");
+drop.onclick = () => fileIn.click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileIn.click(); } };
+["dragover","dragenter"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => handle([...e.dataTransfer.files]));
+fileIn.onchange = () => { handle([...fileIn.files]); fileIn.value = ""; };
+$("clearBtn").onclick = () => { items.forEach(i => URL.revokeObjectURL(i.url)); items.length = 0; render(); $("res").classList.add("hid"); $("warn").classList.add("hid"); setProg(0); setStatus(""); };
+
+const setStatus = t => $("status").textContent = t;
+const setProg = p => $("pb").style.width = (p*100) + "%";
+const kb = n => (n/1024).toFixed(n < 10240 ? 1 : 0) + " KB";
+
+function clean(s){
+  return s.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[\\\/:*?"<>|,.]+/g," ").replace(/\s+/g," ").trim().replace(/ /g,"_");
+}
+function parsePage(text){
+  const t = text.replace(/\s+/g," ");
+  const pm = t.match(/passport number\s*:?\s*([A-Z0-9]{5,12})/i);
+  if (!pm) return null;
+  const dm = t.match(/Dear\s+(.*?)\s+Thank you/i);
+  let name = dm ? dm[1].trim() : "";
+  if (/^[-–—\s]*$/.test(name)) name = "";
+  return { name: clean(name), passport: pm[1].toUpperCase() };
+}
+
+const toBlob = (cv, q) => new Promise(r => cv.toBlob(r, "image/jpeg", q));
+
+// Kompres JPG sampai di bawah batas: turunkan kualitas dulu, lalu perkecil dimensi.
+async function encodeJpg(full, limit){
+  let last = null;
+  for (let f = 1; f >= 0.3; f *= 0.85){
+    let cv = full;
+    if (f < 1){
+      cv = document.createElement("canvas");
+      cv.width = Math.round(full.width * f); cv.height = Math.round(full.height * f);
+      const c = cv.getContext("2d"); c.fillStyle = "#fff"; c.fillRect(0,0,cv.width,cv.height);
+      c.drawImage(full, 0, 0, cv.width, cv.height);
+    }
+    let b = await toBlob(cv, 0.92);
+    if (b.size <= limit) return {blob: b, over: false};
+    let lo = 0.2, hi = 0.92, best = await toBlob(cv, lo);
+    last = best;
+    if (best.size > limit) continue;
+    for (let i = 0; i < 6; i++){
+      const mid = (lo + hi) / 2, m = await toBlob(cv, mid);
+      if (m.size <= limit){ best = m; lo = mid; } else hi = mid;
+    }
+    return {blob: best, over: false};
+  }
+  return {blob: last, over: true};
+}
+
+// PDF satu halaman berisi JPG (ukuran file ≈ ukuran JPG).
+async function makePdf(jpgBlob, iw, ih, pw, ph){
+  const jpg = new Uint8Array(await jpgBlob.arrayBuffer());
+  const enc = new TextEncoder(), parts = [], off = [];
+  let len = 0;
+  const push = d => { const b = typeof d === "string" ? enc.encode(d) : d; parts.push(b); len += b.length; };
+  const obj = (n, body) => { off[n] = len; push(`${n} 0 obj\n${body}\nendobj\n`); };
+  push("%PDF-1.4\n");
+  obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  obj(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+  obj(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw.toFixed(2)} ${ph.toFixed(2)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
+  off[4] = len;
+  push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${iw} /Height ${ih} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`);
+  push(jpg); push("\nendstream\nendobj\n");
+  const cs = `q ${pw.toFixed(2)} 0 0 ${ph.toFixed(2)} 0 0 cm /Im0 Do Q`;
+  obj(5, `<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+  const xref = len;
+  let x = "xref\n0 6\n0000000000 65535 f \n";
+  for (let i = 1; i <= 5; i++) x += String(off[i]).padStart(10, "0") + " 00000 n \n";
+  push(x + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts, {type: "application/pdf"});
+}
+
+async function handle(files){
+  files = files.filter(f => f.type === "application/pdf" || /\.pdf$/i.test(f.name));
+  if (!files.length || busy) return;
+  busy = true; $("res").classList.remove("hid"); $("zipBtn").disabled = true;
+  try { await ready; } catch(e){ alert("Library gagal dimuat. Pastikan folder libs terisi atau ada koneksi internet."); busy = false; return; }
+  const limit = Math.max(10, +$("lim").value || 100) * 1024;
+  let skipped = 0;
+  for (let fi = 0; fi < files.length; fi++){
+    const f = files[fi];
+    try{
+      const pdf = await pdfjsLib.getDocument({data: await f.arrayBuffer()}).promise;
+      for (let p = 1; p <= pdf.numPages; p++){
+        setStatus(`Memproses ${f.name}, halaman ${p}/${pdf.numPages}`);
+        setProg((fi + (p-1)/pdf.numPages) / files.length);
+        const page = await pdf.getPage(p);
+        const tc = await page.getTextContent();
+        const info = parsePage(tc.items.map(i => i.str).join(" "));
+        if (!info){ skipped++; continue; }
+        const vp = page.getViewport({scale: 2}), pt = page.getViewport({scale: 1});
+        const cv = document.createElement("canvas"); cv.width = vp.width; cv.height = vp.height;
+        const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,cv.width,cv.height);
+        await page.render({canvasContext: ctx, viewport: vp}).promise;
+        const jpg = await encodeJpg(cv, limit - 1024);
+        const dim = await createImageBitmap(jpg.blob);
+        const pdfBlob = await makePdf(jpg.blob, dim.width, dim.height, pt.width, pt.height);
+        items.push({jpg: jpg.blob, pdf: pdfBlob, over: jpg.over || pdfBlob.size > limit, url: URL.createObjectURL(jpg.blob), name: info.name, passport: info.passport, src: `${f.name} · hal. ${p}`});
+        render();
+      }
+    }catch(e){ console.error(e); alert(`Gagal membaca ${f.name}`); }
+  }
+  busy = false; setProg(1);
+  const msgs = [];
+  if (skipped) msgs.push(`${skipped} halaman dilewati karena tidak berisi data paspor.`);
+  const noName = items.filter(i => !i.name).length;
+  if (noName) msgs.push(`${noName} file tanpa nama (masih “---” di email). Isi manual pada kolom yang disorot.`);
+  const over = items.filter(i => i.over).length;
+  if (over) msgs.push(`${over} file masih melebihi batas ${kb(limit)} meski sudah dikompres maksimal. Naikkan batas lalu unggah ulang.`);
+  $("warn").innerHTML = msgs.join("<br>"); $("warn").classList.toggle("hid", !msgs.length);
+  setStatus("Selesai. Nama bisa diedit langsung.");
+  render();
+}
+
+const base = i => (i.name ? i.name + "_" : "") + i.passport;
+function uniqueNames(){
+  const seen = {};
+  return items.map(i => { const b = base(i); seen[b] = (seen[b]||0) + 1; return seen[b] > 1 ? `${b}_${seen[b]}` : b; });
+}
+
+function save(filename, blob){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+function render(){
+  const list = $("list"); list.innerHTML = "";
+  $("cnt").textContent = items.length + " file";
+  items.forEach((it, idx) => {
+    const row = document.createElement("div"); row.className = "row" + (it.name ? "" : " bad");
+    const img = document.createElement("img"); img.src = it.url; img.alt = "";
+    const f = document.createElement("div"); f.className = "f";
+    const inp = document.createElement("input"); inp.value = it.name; inp.placeholder = "Isi nama";
+    const sm = document.createElement("small"); if (it.over) sm.className = "over";
+    const upd = () => { sm.innerHTML = `${uniqueNames()[idx]} · JPG ${kb(it.jpg.size)} · PDF ${kb(it.pdf.size)}`; row.classList.toggle("bad", !it.name); };
+    inp.oninput = () => { it.name = clean(inp.value); upd(); };
+    inp.onchange = () => { inp.value = it.name; };
+    f.append(inp, sm); upd();
+    const bx = document.createElement("div"); bx.className = "b";
+    for (const [lbl, key, ext] of [["JPG","jpg",".jpg"],["PDF","pdf",".pdf"]]){
+      const b = document.createElement("button"); b.className = "ghost"; b.textContent = lbl;
+      b.onclick = () => save(uniqueNames()[idx] + ext, it[key]);
+      bx.append(b);
+    }
+    row.append(img, f, bx); list.append(row);
+  });
+  $("zipBtn").disabled = busy || !items.length;
+}
+
+$("zipBtn").onclick = async () => {
+  if (!items.length) return;
+  const old = $("status").textContent; setStatus("Membuat ZIP…");
+  const zip = new JSZip(), names = uniqueNames();
+  items.forEach((it, i) => { zip.file(`JPG/${names[i]}.jpg`, it.jpg); zip.file(`PDF/${names[i]}.pdf`, it.pdf); });
+  save("visa-bio.zip", await zip.generateAsync({type:"blob"}));
+  setStatus(old);
+};
+</script>
+</body>
+</html>
