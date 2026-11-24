@@ -78,6 +78,7 @@ button:disabled{opacity:.4;cursor:default}
 </div>
 
 <div id="paneB" class="hid">
+  <div class="opt">Batas ukuran per PDF <input id="limB" type="number" min="10" max="5000" placeholder="bebas"> KB (kosongkan = tanpa kompres)</div>
   <div id="dropB" class="card" tabindex="0" role="button" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:38px 20px;text-align:center;cursor:pointer;border:1.5px dashed var(--bd)">
     <b style="font-size:16px">Pilih atau tarik file JPG ke sini</b>
     <span style="color:var(--mut);font-size:13px">Nama file tidak diubah, hanya ekstensinya jadi .pdf</span>
@@ -128,7 +129,11 @@ const setProg = p => $("pb").style.width = (p*100) + "%";
 const kb = n => (n/1024).toFixed(n < 10240 ? 1 : 0) + " KB";
 
 function clean(s){
-  return s.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[\\\/:*?"<>|,.]+/g," ").replace(/\s+/g," ").trim().replace(/ /g,"_");
+  return s.normalize("NFKD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[\\\/:*?"<>|]+/g," ")
+    .replace(/[,，、،;]+/g," ")
+    .replace(/\s+/g," ")
+    .replace(/^[\s.\-]+|[\s.\-]+$/g,"");
 }
 function parsePage(text){
   const t = text.replace(/\s+/g," ");
@@ -252,12 +257,12 @@ function render(){
     const f = document.createElement("div"); f.className = "f";
     const inp = document.createElement("input"); inp.value = it.name; inp.placeholder = "Isi nama";
     const sm = document.createElement("small"); if (it.over) sm.className = "over";
-    const upd = () => { sm.innerHTML = `${uniqueNames()[idx]} · JPG ${kb(it.jpg.size)} · PDF ${kb(it.pdf.size)}`; row.classList.toggle("bad", !it.name); };
+    const upd = () => { sm.innerHTML = `${uniqueNames()[idx]} · JPEG ${kb(it.jpg.size)} · PDF ${kb(it.pdf.size)}`; row.classList.toggle("bad", !it.name); };
     inp.oninput = () => { it.name = clean(inp.value); upd(); };
     inp.onchange = () => { inp.value = it.name; };
     f.append(inp, sm); upd();
     const bx = document.createElement("div"); bx.className = "b";
-    for (const [lbl, key, ext] of [["JPG","jpg",".jpg"],["PDF","pdf",".pdf"]]){
+    for (const [lbl, key, ext] of [["JPEG","jpg",".jpeg"],["PDF","pdf",".pdf"]]){
       const b = document.createElement("button"); b.className = "ghost"; b.textContent = lbl;
       b.onclick = () => save(uniqueNames()[idx] + ext, it[key]);
       bx.append(b);
@@ -271,7 +276,7 @@ $("zipBtn").onclick = async () => {
   if (!items.length) return;
   const old = $("status").textContent; setStatus("Membuat ZIP…");
   const zip = new JSZip(), names = uniqueNames();
-  items.forEach((it, i) => { zip.file(`JPG/${names[i]}.jpg`, it.jpg); zip.file(`PDF/${names[i]}.pdf`, it.pdf); });
+  items.forEach((it, i) => { zip.file(`JPEG/${names[i]}.jpeg`, it.jpg); zip.file(`PDF/${names[i]}.pdf`, it.pdf); });
   save("visa-bio.zip", await zip.generateAsync({type:"blob"}));
   setStatus(old);
 };
@@ -307,7 +312,7 @@ async function handleJpg(files){
   if (!files.length || busyB) return;
   busyB = true; $("resB").classList.remove("hid"); $("zipB").disabled = true;
   try { await ready; } catch(e){ alert("Library gagal dimuat."); busyB = false; return; }
-  const limit = Math.max(10, +$("lim").value || 100) * 1024;
+  const limit = (+$("limB").value > 0) ? +$("limB").value * 1024 : Infinity;
   let resized = 0;
   for (let k = 0; k < files.length; k++){
     const f = files[k];
