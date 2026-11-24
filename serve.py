@@ -10,7 +10,8 @@ def lan_ip():
     finally:
         s.close()
 class H(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, *a): pass
+    def log_message(self, format: str, *args: object) -> None:
+        pass
 socketserver.ThreadingTCPServer.allow_reuse_address = True
 with socketserver.ThreadingTCPServer(("0.0.0.0", PORT), H) as srv:
     print("\n  Visa Bio Converter berjalan.")

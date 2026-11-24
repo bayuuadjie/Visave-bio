@@ -42,6 +42,9 @@ button:disabled{opacity:.4;cursor:default}
 .row.bad .f input{border-color:var(--warnbd);background:var(--warnbg)}
 .row .b{display:flex;gap:6px}
 .row button{padding:7px 11px;font-size:13px}
+.tabs{display:flex;gap:4px;background:var(--soft);border-radius:12px;padding:4px;margin-bottom:16px}
+.tabs button{flex:1;background:transparent;color:var(--mut);padding:8px 10px}
+.tabs button.on{background:var(--card);color:var(--tx);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .priv{margin:20px 0 0;color:var(--mut);font-size:12px;text-align:center}
 </style>
 </head>
@@ -53,6 +56,8 @@ button:disabled{opacity:.4;cursor:default}
 
   <div class="opt">Batas ukuran per file <input id="lim" type="number" min="10" max="5000" value="100"> KB</div>
 
+  <div class="tabs"><button id="tabA" class="on">PDF → JPG + PDF</button><button id="tabB">JPG → PDF</button></div>
+  <div id="paneA">
   <div id="drop" class="card" tabindex="0" role="button">
     <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
     <b>Pilih atau tarik PDF ke sini</b>
@@ -70,6 +75,24 @@ button:disabled{opacity:.4;cursor:default}
     <div id="warn" class="hid"></div>
     <div id="list"></div>
   </section>
+</div>
+
+<div id="paneB" class="hid">
+  <div id="dropB" class="card" tabindex="0" role="button" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:38px 20px;text-align:center;cursor:pointer;border:1.5px dashed var(--bd)">
+    <b style="font-size:16px">Pilih atau tarik file JPG ke sini</b>
+    <span style="color:var(--mut);font-size:13px">Nama file tidak diubah, hanya ekstensinya jadi .pdf</span>
+  </div>
+  <input id="fileB" type="file" accept="image/jpeg,.jpg,.jpeg" multiple class="hid">
+  <section id="resB" class="card hid" style="margin-top:20px;overflow:hidden">
+    <div class="head">
+      <div class="t"><b id="cntB">0 file</b><span id="statusB"></span></div>
+      <button id="clearB" class="ghost">Ulangi</button>
+      <button id="zipB" disabled>Unduh semua PDF</button>
+    </div>
+    <div id="warnB" class="hid" style="margin:12px 16px;padding:10px 12px;border-radius:10px;background:var(--warnbg);border:1px solid var(--warnbd);color:var(--warn);font-size:13px"></div>
+    <div id="listB"></div>
+  </section>
+</div>
   <p class="priv">Diproses di browser Anda. Data paspor tidak dikirim keluar dari jaringan.</p>
 </main>
 
@@ -145,7 +168,7 @@ async function encodeJpg(full, limit){
 }
 
 // PDF satu halaman berisi JPG (ukuran file ≈ ukuran JPG).
-async function makePdf(jpgBlob, iw, ih, pw, ph){
+async function makePdf(jpgBlob, iw, ih, pw, ph, cs = "DeviceRGB"){
   const jpg = new Uint8Array(await jpgBlob.arrayBuffer());
   const enc = new TextEncoder(), parts = [], off = [];
   let len = 0;
@@ -156,10 +179,10 @@ async function makePdf(jpgBlob, iw, ih, pw, ph){
   obj(2, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
   obj(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw.toFixed(2)} ${ph.toFixed(2)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
   off[4] = len;
-  push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${iw} /Height ${ih} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`);
+  push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${iw} /Height ${ih} /ColorSpace /${cs} /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`);
   push(jpg); push("\nendstream\nendobj\n");
-  const cs = `q ${pw.toFixed(2)} 0 0 ${ph.toFixed(2)} 0 0 cm /Im0 Do Q`;
-  obj(5, `<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+  const cmd = `q ${pw.toFixed(2)} 0 0 ${ph.toFixed(2)} 0 0 cm /Im0 Do Q`;
+  obj(5, `<< /Length ${cmd.length} >>\nstream\n${cmd}\nendstream`);
   const xref = len;
   let x = "xref\n0 6\n0000000000 65535 f \n";
   for (let i = 1; i <= 5; i++) x += String(off[i]).padStart(10, "0") + " 00000 n \n";
@@ -251,6 +274,99 @@ $("zipBtn").onclick = async () => {
   items.forEach((it, i) => { zip.file(`JPG/${names[i]}.jpg`, it.jpg); zip.file(`PDF/${names[i]}.pdf`, it.pdf); });
   save("visa-bio.zip", await zip.generateAsync({type:"blob"}));
   setStatus(old);
+};
+// ===== Tab JPG -> PDF =====
+$("tabA").onclick = () => { $("paneA").classList.remove("hid"); $("paneB").classList.add("hid"); $("tabA").classList.add("on"); $("tabB").classList.remove("on"); };
+$("tabB").onclick = () => { $("paneB").classList.remove("hid"); $("paneA").classList.add("hid"); $("tabB").classList.add("on"); $("tabA").classList.remove("on"); };
+
+const jitems = []; let busyB = false;
+const dropB = $("dropB"), fileB = $("fileB");
+dropB.onclick = () => fileB.click();
+dropB.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileB.click(); } };
+["dragover","dragenter"].forEach(ev => dropB.addEventListener(ev, e => { e.preventDefault(); dropB.classList.add("over"); }));
+["dragleave","drop"].forEach(ev => dropB.addEventListener(ev, e => { e.preventDefault(); dropB.classList.remove("over"); }));
+dropB.addEventListener("drop", e => handleJpg([...e.dataTransfer.files]));
+fileB.onchange = () => { handleJpg([...fileB.files]); fileB.value = ""; };
+$("clearB").onclick = () => { jitems.forEach(i => URL.revokeObjectURL(i.url)); jitems.length = 0; renderB(); $("resB").classList.add("hid"); $("warnB").classList.add("hid"); $("statusB").textContent = ""; };
+
+function jpegComps(u){
+  if (u[0] !== 0xFF || u[1] !== 0xD8) return 0;
+  let i = 2;
+  while (i < u.length - 9){
+    if (u[i] !== 0xFF){ i++; continue; }
+    const m = u[i+1];
+    if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) return u[i+9];
+    if (m === 0xD8 || m === 0x01 || m === 0xFF || (m >= 0xD0 && m <= 0xD7)){ i += (m === 0xFF ? 1 : 2); continue; }
+    i += 2 + ((u[i+2] << 8) | u[i+3]);
+  }
+  return 0;
+}
+
+async function handleJpg(files){
+  files = files.filter(f => /^image\/jpe?g$/.test(f.type) || /\.jpe?g$/i.test(f.name));
+  if (!files.length || busyB) return;
+  busyB = true; $("resB").classList.remove("hid"); $("zipB").disabled = true;
+  try { await ready; } catch(e){ alert("Library gagal dimuat."); busyB = false; return; }
+  const limit = Math.max(10, +$("lim").value || 100) * 1024;
+  let resized = 0;
+  for (let k = 0; k < files.length; k++){
+    const f = files[k];
+    $("statusB").textContent = `Memproses ${k+1}/${files.length}: ${f.name}`;
+    try{
+      const comps = jpegComps(new Uint8Array(await f.arrayBuffer()));
+      const okComps = comps === 1 || comps === 3;
+      let blob = f, cs = comps === 1 ? "DeviceGray" : "DeviceRGB", over = false, bmp = await createImageBitmap(f);
+      if (f.size > limit - 1024 || !okComps){
+        const cv = document.createElement("canvas"); cv.width = bmp.width; cv.height = bmp.height;
+        const c = cv.getContext("2d"); c.fillStyle = "#fff"; c.fillRect(0,0,cv.width,cv.height); c.drawImage(bmp, 0, 0);
+        const r = await encodeJpg(cv, limit - 1024);
+        blob = r.blob; over = r.over; cs = "DeviceRGB"; bmp = await createImageBitmap(blob);
+        if (f.size > limit - 1024) resized++;
+      }
+      const pw = 595.28, pdf = await makePdf(blob, bmp.width, bmp.height, pw, pw * bmp.height / bmp.width, cs);
+      jitems.push({name: f.name.replace(/\.[^.]+$/, ""), pdf, orig: f.size, over: over || pdf.size > limit, url: URL.createObjectURL(f)});
+      renderB();
+    }catch(e){ console.error(e); alert(`Gagal memproses ${f.name}`); }
+  }
+  busyB = false;
+  const msgs = [];
+  if (resized) msgs.push(`${resized} JPG lebih besar dari batas, jadi dikompres dulu sebelum dijadikan PDF.`);
+  const over = jitems.filter(i => i.over).length;
+  if (over) msgs.push(`${over} PDF masih melebihi batas ${kb(limit)} meski sudah dikompres maksimal. Naikkan batas lalu ulangi.`);
+  $("warnB").innerHTML = msgs.join("<br>"); $("warnB").classList.toggle("hid", !msgs.length);
+  $("statusB").textContent = "Selesai.";
+  renderB();
+}
+
+function uniqueB(){
+  const seen = {};
+  return jitems.map(i => { seen[i.name] = (seen[i.name]||0) + 1; return seen[i.name] > 1 ? `${i.name}_${seen[i.name]}` : i.name; });
+}
+
+function renderB(){
+  const list = $("listB"); list.innerHTML = "";
+  $("cntB").textContent = jitems.length + " file";
+  const names = uniqueB();
+  jitems.forEach((it, idx) => {
+    const row = document.createElement("div"); row.className = "row";
+    const img = document.createElement("img"); img.src = it.url; img.alt = "";
+    const f = document.createElement("div"); f.className = "f";
+    const t = document.createElement("div"); t.style.cssText = "font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"; t.textContent = names[idx] + ".pdf";
+    const sm = document.createElement("small"); if (it.over) sm.className = "over";
+    sm.textContent = `JPG ${kb(it.orig)} → PDF ${kb(it.pdf.size)}`;
+    f.append(t, sm);
+    const b = document.createElement("button"); b.className = "ghost"; b.textContent = "Unduh PDF";
+    b.onclick = () => save(names[idx] + ".pdf", it.pdf);
+    row.append(img, f, b); list.append(row);
+  });
+  $("zipB").disabled = busyB || !jitems.length;
+}
+
+$("zipB").onclick = async () => {
+  if (!jitems.length) return;
+  const zip = new JSZip(), names = uniqueB();
+  jitems.forEach((it, i) => zip.file(names[i] + ".pdf", it.pdf));
+  save("pdf-hasil.zip", await zip.generateAsync({type:"blob"}));
 };
 </script>
 </body>
